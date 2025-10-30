@@ -1,51 +1,62 @@
-<h1 align="center">Blockscout</h1>
-<p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
-<div align="center">
+Setup Blockscout on EC2 (Browser Access)
+1. Connect to EC2
+ssh -i "key.pem" ubuntu@<EC2-IP>
 
-[![Blockscout](https://github.com/blockscout/blockscout/actions/workflows/config.yml/badge.svg)](https://github.com/blockscout/blockscout/actions)
-[![Discord](https://img.shields.io/badge/chat-Blockscout-green.svg)](https://discord.gg/blockscout)
+2. Install Docker
+sudo apt update
+sudo apt install docker.io docker-compose -y
 
-</div>
+3. Clone Blockscout
+git clone https://github.com/blockscout/blockscout.git
+cd blockscout/docker-compose
+
+4. Edit ENV files
+
+Go to docker-compose/envs/
+
+frontend.env
+NEXT_PUBLIC_API_HOST=<EC2-IP>
+NEXT_PUBLIC_API_PROTOCOL=http
+NEXT_PUBLIC_WS_PROTOCOL=ws
+CORS_ALLOWED_ORIGINS=*
+
+backend.env
+ETHEREUM_JSONRPC_HTTP_URL=http://<PRIVATE-IP>:8545
+ETHEREUM_JSONRPC_WS_URL=ws://<PRIVATE-IP>:8546
+
+5. Edit Proxy Config
+
+Go to docker-compose/proxy/
+Update nginx.conf or default.conf → replace any domain/localhost with your private IP
+Example:
+
+proxy_pass http://172.31.22.1:4000;
+
+6. Run Blockscout
+make start
 
 
-Blockscout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on EVM (Ethereum Virtual Machine) blockchains. This includes Ethereum Mainnet, Ethereum Classic, Optimism, Gnosis Chain and many other **Ethereum testnets, private networks, L2s and sidechains**.
+or
 
-See our [project documentation](https://docs.blockscout.com/) for detailed information and setup instructions.
+docker-compose up -d
 
-For questions, comments and feature requests see the [discussions section](https://github.com/blockscout/blockscout/discussions) or via [Discord](https://discord.com/invite/blockscout).
+7. Allow EC2 Access
 
-## About Blockscout
+In AWS Security Group:
 
-Blockscout allows users to search transactions, view accounts and balances, verify and interact with smart contracts and view and interact with applications on the Ethereum network including many forks, sidechains, L2s and testnets.
+Add inbound rule → HTTP (port 80) from 0.0.0.0/0
 
-Blockscout is an open-source alternative to centralized, closed source block explorers such as Etherscan, Etherchain and others.  As Ethereum sidechains and L2s continue to proliferate in both private and public settings, transparent, open-source tools are needed to analyze and validate all transactions.
+8. Access in Browser
+http://<EC2-Public-IP>
 
-## Supported Projects
+9. Fix Common Issues
 
-Blockscout currently supports several hundred chains and rollups throughout the greater blockchain ecosystem. Ethereum, Cosmos, Polkadot, Avalanche, Near and many others include Blockscout integrations. A comprehensive list is available at [chains.blockscout.com](https://chains.blockscout.com). If your project is not listed, contact the team in [Discord](https://discord.com/invite/blockscout).
+Bad Gateway: Wrong IP in env/proxy
 
-## Getting Started
+CORS Error: Add CORS_ALLOWED_ORIGINS=*
 
-See the [project documentation](https://docs.blockscout.com/) for instructions:
+WS Error: RPC not reachable
 
-- [Manual deployment](https://docs.blockscout.com/for-developers/deployment/manual-deployment-guide)
-- [Docker-compose deployment](https://docs.blockscout.com/for-developers/deployment/docker-compose-deployment)
-- [Kubernetes deployment](https://docs.blockscout.com/for-developers/deployment/kubernetes-deployment)
-- [Manual deployment (backend + old UI)](https://docs.blockscout.com/for-developers/deployment/manual-old-ui)
-- [Ansible deployment](https://docs.blockscout.com/for-developers/ansible-deployment)
-- [ENV variables](https://docs.blockscout.com/setup/env-variables)
-- [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
+Check logs:
 
-## Acknowledgements
-
-We would like to thank the EthPrize foundation for their funding support.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and pull request protocol. We expect contributors to follow our [code of conduct](CODE_OF_CONDUCT.md) when submitting code or comments.
-
-## License
-
-[![License: GPL v3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-
-This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.
+docker-compose logs -f
